@@ -1,10 +1,11 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Card, Col, Form, Input, InputNumber, Modal, Row, Select, Space, Tag, Typography, message } from 'antd';
-import { PlusOutlined, SyncOutlined, ToolOutlined } from '@ant-design/icons';
+import { PlusOutlined, SyncOutlined, ToolOutlined, UploadOutlined } from '@ant-design/icons';
 import { useEffect, useState } from 'react';
 import AuthenticatedLayout from '../../../Layouts/AuthenticatedLayout';
 import { resolveStatusTags } from '../../../utils/equipmentStatus';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 function formatMoney(value) {
     const num = Number(value);
@@ -41,6 +42,7 @@ function buildFilterParams(values) {
 
 export default function EquipmentIndex() {
     const { equipment, filters, projects, departments, rfuCandidates, bdCandidates, flash } = usePage().props;
+    const { can } = usePermissions();
     const [form] = Form.useForm();
     const [filterForm] = Form.useForm();
     const [rfuForm] = Form.useForm();
@@ -188,6 +190,11 @@ export default function EquipmentIndex() {
                         Equipment Register
                     </Typography.Title>
                     <Space wrap>
+                        {can('hm-km.upload') ? (
+                            <Button icon={<UploadOutlined />} onClick={() => router.get('/equipment/hm-km/upload')}>
+                                Upload HM/KM
+                            </Button>
+                        ) : null}
                         <Button icon={<SyncOutlined />} onClick={openRfuModal}>
                             Update RFU Units
                         </Button>

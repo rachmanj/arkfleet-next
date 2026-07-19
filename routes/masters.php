@@ -3,6 +3,7 @@
 use App\Http\Controllers\Masters\BusinessPartnerController;
 use App\Http\Controllers\Masters\DepartmentController;
 use App\Http\Controllers\Masters\EquipmentController;
+use App\Http\Controllers\Masters\EquipmentHmKmController;
 use App\Http\Controllers\Masters\ProjectController;
 use App\Http\Controllers\Sap\SapIntegrationController;
 use Illuminate\Support\Facades\Route;
@@ -14,9 +15,22 @@ Route::middleware(['auth', 'permission:view'])->prefix('masters')->name('masters
 });
 
 Route::middleware(['auth', 'permission:view'])->group(function () {
+    Route::get('equipment/hm-km/upload', [EquipmentHmKmController::class, 'uploadForm'])
+        ->name('equipment.hm-km.upload-form');
+    Route::post('equipment/hm-km/upload', [EquipmentHmKmController::class, 'upload'])
+        ->name('equipment.hm-km.upload');
+    Route::get('equipment/hm-km/batches', [EquipmentHmKmController::class, 'batches'])
+        ->name('equipment.hm-km.batches');
+    Route::get('equipment/hm-km/batches/{batch}', [EquipmentHmKmController::class, 'batchDetail'])
+        ->name('equipment.hm-km.batch-detail');
+    Route::delete('equipment/hm-km/{reading}', [EquipmentHmKmController::class, 'destroy'])
+        ->name('equipment.hm-km.destroy');
+
     Route::get('equipment', [EquipmentController::class, 'index'])->name('equipment.index');
     Route::get('equipment/{equipment}', [EquipmentController::class, 'show'])->name('equipment.show');
     Route::get('equipment/{equipment}/payreq-summary', [EquipmentController::class, 'payreqSummary'])->name('equipment.payreq-summary');
+    Route::get('equipment/{equipment}/hm-km', [EquipmentHmKmController::class, 'index'])->name('equipment.hm-km.index');
+    Route::post('equipment/{equipment}/hm-km', [EquipmentHmKmController::class, 'store'])->name('equipment.hm-km.store');
     Route::post('equipment', [EquipmentController::class, 'store'])->name('equipment.store');
     Route::post('equipment/update-rfu', [EquipmentController::class, 'updateRfu'])->name('equipment.update-rfu');
     Route::post('equipment/update-bd', [EquipmentController::class, 'updateBd'])->name('equipment.update-bd');

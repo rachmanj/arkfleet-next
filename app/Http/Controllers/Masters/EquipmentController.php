@@ -111,6 +111,18 @@ class EquipmentController extends Controller
             'unitNoHistories.creator',
         ]);
 
+        if ($request->user()?->can('hm-km.view')) {
+            $equipment->load([
+                'hmKmReadings' => fn ($query) => $query
+                    ->with('uploader:id,name')
+                    ->orderByDesc('reading_date')
+                    ->orderByDesc('created_at')
+                    ->limit(50),
+                'latestHmReading',
+                'latestKmReading',
+            ]);
+        }
+
         $movingLines = IpaTransferLine::query()
             ->with([
                 'transfer:id,transfer_number,transferred_at',
@@ -124,6 +136,8 @@ class EquipmentController extends Controller
         return Inertia::render('Masters/Equipment/Show', [
             'equipment' => $equipment,
             'movingLines' => $movingLines,
+            'latestHmReading' => $equipment->latestHmReading,
+            'latestKmReading' => $equipment->latestKmReading,
             'projects' => Project::selectable()->active()->orderBy('code')->get(['id', 'code', 'name']),
             'departments' => Department::selectable()->active()->orderBy('department_name')->get(['id', 'department_name']),
             'payreqEnabled' => filled(config('services.payreq.api_url')),

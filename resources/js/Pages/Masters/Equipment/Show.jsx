@@ -35,6 +35,8 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AuthenticatedLayout from '../../../Layouts/AuthenticatedLayout';
 import { resolveStatusTags } from '../../../utils/equipmentStatus';
+import { usePermissions } from '../../../hooks/usePermissions';
+import HistoryTab from './HmKm/HistoryTab';
 
 const LEGAL_CODES = ['BPKB', 'STNK'];
 const ACQUISITION_CODES = ['PO'];
@@ -198,7 +200,8 @@ function PayreqTab({ equipmentId, payreqEnabled }) {
 }
 
 export default function EquipmentShow() {
-    const { equipment, movingLines, projects, departments, payreqEnabled, flash } = usePage().props;
+    const { equipment, movingLines, projects, departments, payreqEnabled, flash, latestHmReading, latestKmReading } = usePage().props;
+    const { can } = usePermissions();
     const [editOpen, setEditOpen] = useState(false);
     const [historyOpen, setHistoryOpen] = useState(false);
     const [extendOpen, setExtendOpen] = useState(false);
@@ -209,6 +212,10 @@ export default function EquipmentShow() {
 
     if (flash?.success) {
         message.success(flash.success);
+    }
+
+    if (flash?.error) {
+        message.error(flash.error);
     }
 
     const documents = equipment.documents ?? [];
@@ -553,6 +560,21 @@ export default function EquipmentShow() {
             label: 'Payreq',
             children: <PayreqTab equipmentId={equipment.id} payreqEnabled={payreqEnabled} />,
         },
+        ...(can('hm-km.view')
+            ? [
+                  {
+                      key: 'hm-km',
+                      label: 'HM/KM History',
+                      children: (
+                          <HistoryTab
+                              equipment={equipment}
+                              latestHmReading={latestHmReading}
+                              latestKmReading={latestKmReading}
+                          />
+                      ),
+                  },
+              ]
+            : []),
     ];
 
     return (

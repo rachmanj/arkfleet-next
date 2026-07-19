@@ -121,4 +121,23 @@ class Equipment extends Model
     {
         return $this->hasOne(FixedAsset::class);
     }
+
+    public function hmKmReadings(): HasMany
+    {
+        return $this->hasMany(EquipmentHmKmReading::class);
+    }
+
+    public function latestHmReading(): HasOne
+    {
+        return $this->hasOne(EquipmentHmKmReading::class)
+            ->where('reading_type', 'hm')
+            ->latestOfMany('reading_date');
+    }
+
+    public function latestKmReading(): HasOne
+    {
+        return $this->hasOne(EquipmentHmKmReading::class)
+            ->where('reading_type', 'km')
+            ->latestOfMany('reading_date');
+    }
 }

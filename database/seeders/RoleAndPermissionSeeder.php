@@ -19,6 +19,16 @@ class RoleAndPermissionSeeder extends Seeder
             'sync',
             'manage-visibility',
             'sap.post',
+            'hm-km.upload',
+            'hm-km.view',
+            'hm-km.delete',
+            'hm-km.manual',
+        ];
+
+        $hmKmManagerPermissions = [
+            'hm-km.upload',
+            'hm-km.view',
+            'hm-km.manual',
         ];
 
         foreach ($permissions as $permission) {
@@ -36,10 +46,10 @@ class RoleAndPermissionSeeder extends Seeder
         $legacyUserRole = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
 
         $adminRole->syncPermissions($permissions);
-        $accountantRole->syncPermissions(['view', 'sync', 'sap.post']);
-        $managerRole->syncPermissions(['view']);
+        $accountantRole->syncPermissions(['view', 'sync', 'sap.post', 'hm-km.view']);
+        $managerRole->syncPermissions(array_merge(['view'], $hmKmManagerPermissions));
         $legacyAdminRole->syncPermissions($permissions);
-        $legacyManagerRole->syncPermissions(['view']);
+        $legacyManagerRole->syncPermissions(array_merge(['view'], $hmKmManagerPermissions));
         $legacyUserRole->syncPermissions(['view']);
 
         $admin = User::query()->updateOrCreate(
