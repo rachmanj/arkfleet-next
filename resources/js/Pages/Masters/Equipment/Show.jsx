@@ -285,8 +285,8 @@ export default function EquipmentShow() {
         {
             title: 'Transfer No',
             render: (_, record) => (
-                <Link href={`/movings/transfers/${record.transfer?.id}`}>
-                    {record.transfer?.transfer_number ?? '—'}
+                <Link href={`/movings/${record.transfer?.id}/show`}>
+                    {record.transfer?.ipa_no ?? record.transfer?.transfer_number ?? '—'}
                 </Link>
             ),
         },

@@ -10,6 +10,7 @@ class IpaTransferLine extends Model
     protected $fillable = [
         'ipa_transfer_id',
         'equipment_id',
+        'unit_no',
         'unit_code',
         'from_project_code',
         'to_project_code',

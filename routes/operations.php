@@ -8,11 +8,21 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'permission:view'])->group(function () {
     Route::get('movings', [MovingController::class, 'index'])->name('movings.index');
-    Route::post('movings/cart', [MovingController::class, 'addToCart'])->name('movings.cart.add');
-    Route::delete('movings/cart/{cartItem}', [MovingController::class, 'removeFromCart'])->name('movings.cart.remove');
-    Route::post('movings/submit', [MovingController::class, 'submit'])->name('movings.submit');
-    Route::get('movings/transfers/{transfer}', [MovingController::class, 'show'])->name('movings.show');
-    Route::get('movings/transfers/{transfer}/pdf', [MovingController::class, 'pdf'])->name('movings.pdf');
+    Route::get('movings/create', [MovingController::class, 'create'])->name('movings.create');
+    Route::post('movings', [MovingController::class, 'store'])->name('movings.store');
+    Route::get('movings/{moving}/edit', [MovingController::class, 'edit'])->name('movings.edit');
+    Route::put('movings/{moving}', [MovingController::class, 'update'])->name('movings.update');
+    Route::delete('movings/{moving}', [MovingController::class, 'destroy'])->name('movings.destroy');
+
+    Route::get('movings/{moving}/equipment', [MovingController::class, 'addEquipment'])->name('movings.equipment');
+    Route::post('movings/{moving}/cart', [MovingController::class, 'addToCart'])->name('movings.cart.add');
+    Route::delete('movings/{moving}/cart/{cartItem}', [MovingController::class, 'removeFromCart'])->name('movings.cart.remove');
+
+    Route::post('movings/{moving}/submit', [MovingController::class, 'submit'])->name('movings.submit');
+    Route::post('movings/{moving}/approve', [MovingController::class, 'approve'])->name('movings.approve');
+
+    Route::get('movings/{moving}/show', [MovingController::class, 'show'])->name('movings.show');
+    Route::get('movings/{moving}/pdf', [MovingController::class, 'pdf'])->name('movings.pdf');
 
     Route::get('documents', [DocumentController::class, 'index'])->name('documents.index');
     Route::post('documents', [DocumentController::class, 'store'])->name('documents.store');

@@ -30,7 +30,18 @@ Decision: [Title] - [YYYY-MM-DD]
 
 ## Recent Decisions
 
-Decision: Legacy DB migration strategy — 2026-07-16
+Decision: IPA `ipa_no` vs `transfer_number` — 2026-07-19
+
+**Context**: Movings/IPA redesign needs a user-facing document number (legacy `ipa_no`) while existing code and reports reference `transfer_number`.
+
+**Decision**: Keep both columns. `ipa_no` is the canonical user-facing/printed number; `transfer_number` remains auto-generated internal reference (defaults to same value when user leaves IPA no blank).
+
+**Implementation**: Migrations add `ipa_no`, `ipa_date`, tujuan/CC, status, approval fields; `IpaTransferService::createIpa()` / PDF filename use `ipa_no`.
+
+**Review Date**: If reports/external integrations should drop `transfer_number`.
+
+---
+
 
 **Context**: Legacy `arkfleet_db` (Laravel 10) schema differs from v2: `equipments` vs `equipment`, `documents` vs `equipment_documents`, projects use `project_code`/`bowheer`/`isActive`, departments lack SAP fields.
 

@@ -1,154 +1,293 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ProTable } from '@ant-design/pro-components';
-import { Button, Card, Col, Form, Input, Row, Select, Space, Typography } from 'antd';
-import { PlusOutlined, SendOutlined } from '@ant-design/icons';
+import {
+    Button,
+    Card,
+    Col,
+    Collapse,
+    DatePicker,
+    Form,
+    Input,
+    Row,
+    Select,
+    Space,
+    Tag,
+    Typography,
+    message,
+    Modal,
+} from 'antd';
+import {
+    DeleteOutlined,
+    EditOutlined,
+    EyeOutlined,
+    FilePdfOutlined,
+    PlusOutlined,
+} from '@ant-design/icons';
+import dayjs from 'dayjs';
+import { useEffect } from 'react';
 import AuthenticatedLayout from '../../../Layouts/AuthenticatedLayout';
 
+const STATUS_COLORS = {
+    DRAFT: 'gold',
+    SUBMITTED: 'blue',
+    APPROVED: 'green',
+};
+
+function formatDate(value) {
+    if (!value) {
+        return '—';
+    }
+
+    return dayjs(value).format('DD MMM YYYY');
+}
+
+function buildFilterParams(values) {
+    const params = {};
+
+    Object.entries(values).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === '') {
+            return;
+        }
+
+        if (key === 'date_range' && Array.isArray(value) && value.length === 2) {
+            params.date_from = value[0].format('YYYY-MM-DD');
+            params.date_to = value[1].format('YYYY-MM-DD');
+
+            return;
+        }
+
+        params[key] = value;
+    });
+
+    return params;
+}
+
 export default function MovingsIndex() {
-    const { cartItems, availableEquipment, transfers, projects, departments, filters } = usePage().props;
-    const [submitForm] = Form.useForm();
+    const { transfers, projects, filters, flash } = usePage().props;
+    const [filterForm] = Form.useForm();
 
-    const equipmentColumns = [
-        { title: 'Unit Code', dataIndex: 'unit_code' },
-        { title: 'Unit Code', dataIndex: 'unit_code' },
-        { title: 'Project', dataIndex: 'project_code' },
-        { title: 'Department', render: (_, r) => r.department?.department_name ?? '—' },
-        {
-            title: 'Action',
-            render: (_, record) => (
-                <Button
-                    size="small"
-                    icon={<PlusOutlined />}
-                    onClick={() =>
-                        router.post('/movings/cart', { equipment_id: record.id }, { preserveScroll: true })
-                    }
-                >
-                    Add to cart
-                </Button>
-            ),
-        },
-    ];
+    useEffect(() => {
+        if (flash?.success) {
+            message.success(flash.success);
+        }
 
-    const cartColumns = [
-        { title: 'Unit Code', render: (_, r) => r.equipment?.unit_code },
-        { title: 'To Project', dataIndex: 'to_project_code' },
-        { title: 'To Department', render: (_, r) => r.to_department?.department_name ?? '—' },
-        {
-            title: 'Action',
-            render: (_, record) => (
-                <Button danger size="small" onClick={() => router.delete(`/movings/cart/${record.id}`, { preserveScroll: true })}>
-                    Remove
-                </Button>
-            ),
-        },
-    ];
+        if (flash?.error) {
+            message.error(flash.error);
+        }
+    }, [flash]);
 
-    const historyColumns = [
-        { title: 'Transfer No', dataIndex: 'transfer_number' },
-        { title: 'Date', dataIndex: 'transferred_at', render: (v) => new Date(v).toLocaleString() },
-        { title: 'To Project', dataIndex: 'to_project_code' },
-        { title: 'To Department', render: (_, r) => r.to_department?.department_name ?? '—' },
-        { title: 'Lines', dataIndex: 'line_count' },
-        {
-            title: 'Action',
-            render: (_, record) => (
-                <Button type="link" onClick={() => router.get(`/movings/transfers/${record.id}`)}>
-                    View
-                </Button>
-            ),
-        },
-    ];
+    useEffect(() => {
+        filterForm.setFieldsValue({
+            ipa_no: filters?.ipa_no ?? undefined,
+            date_range:
+                filters?.date_from && filters?.date_to
+                    ? [dayjs(filters.date_from), dayjs(filters.date_to)]
+                    : undefined,
+            from_project_code: filters?.from_project_code ?? undefined,
+            to_project_code: filters?.to_project_code ?? undefined,
+            status: filters?.status ?? undefined,
+            unit_code: filters?.unit_code ?? undefined,
+        });
+    }, [filterForm, filters]);
 
-    const submitTransfer = (values) => {
-        router.post('/movings/submit', values);
+    const applyFilters = (extra = {}) => {
+        const values = filterForm.getFieldsValue();
+        router.get('/movings', { ...buildFilterParams(values), search: filters?.search, ...extra }, { preserveState: true });
     };
+
+    const resetFilters = () => {
+        filterForm.resetFields();
+        router.get('/movings');
+    };
+
+    const confirmDelete = (record) => {
+        Modal.confirm({
+            title: 'Delete draft IPA?',
+            content: `This will permanently delete ${record.ipa_no}.`,
+            okText: 'Delete',
+            okType: 'danger',
+            onOk: () => router.delete(`/movings/${record.id}`),
+        });
+    };
+
+    const columns = [
+        { title: 'IPA No', dataIndex: 'ipa_no' },
+        { title: 'IPA Date', dataIndex: 'ipa_date', render: (value) => formatDate(value) },
+        {
+            title: 'From Project',
+            render: (_, record) =>
+                record.from_project_code
+                    ? `${record.from_project_code}${record.from_project?.name ? ` — ${record.from_project.name}` : ''}`
+                    : '—',
+        },
+        {
+            title: 'To Project',
+            render: (_, record) =>
+                record.to_project_code
+                    ? `${record.to_project_code}${record.to_project?.name ? ` — ${record.to_project.name}` : ''}`
+                    : '—',
+        },
+        { title: 'Equipment Count', dataIndex: 'line_count' },
+        {
+            title: 'Status',
+            dataIndex: 'status',
+            render: (status) => <Tag color={STATUS_COLORS[status] ?? 'default'}>{status}</Tag>,
+        },
+        { title: 'Created By', render: (_, record) => record.user?.name ?? '—' },
+        {
+            title: 'Actions',
+            render: (_, record) => (
+                <Space>
+                    <Button
+                        type="text"
+                        icon={<EyeOutlined />}
+                        title="View"
+                        onClick={() => router.get(`/movings/${record.id}/show`)}
+                    />
+                    {record.status === 'DRAFT' && (
+                        <Button
+                            type="text"
+                            icon={<EditOutlined />}
+                            title="Edit"
+                            onClick={() => router.get(`/movings/${record.id}/edit`)}
+                        />
+                    )}
+                    <Button
+                        type="text"
+                        icon={<FilePdfOutlined />}
+                        title="Print PDF"
+                        href={`/movings/${record.id}/pdf`}
+                    />
+                    {record.status === 'DRAFT' && (
+                        <Button
+                            type="text"
+                            danger
+                            icon={<DeleteOutlined />}
+                            title="Delete"
+                            onClick={() => confirmDelete(record)}
+                        />
+                    )}
+                </Space>
+            ),
+        },
+    ];
 
     return (
         <AuthenticatedLayout>
             <Head title="Movings / IPA" />
 
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                <Typography.Title level={4} style={{ margin: 0 }}>
-                    Movings / IPA Transfer
-                </Typography.Title>
-
-                <Row gutter={16}>
-                    <Col xs={24} lg={14}>
-                        <Card title="Available Equipment">
-                            <Input.Search
-                                placeholder="Search unit no"
-                                defaultValue={filters?.search}
-                                onSearch={(value) =>
-                                    router.get('/movings', { search: value || undefined }, { preserveState: true })
-                                }
-                                style={{ marginBottom: 16, maxWidth: 320 }}
-                                allowClear
-                            />
-                            <ProTable
-                                rowKey="id"
-                                columns={equipmentColumns}
-                                dataSource={availableEquipment.data}
-                                search={false}
-                                options={false}
-                                pagination={{
-                                    current: availableEquipment.current_page,
-                                    pageSize: availableEquipment.per_page,
-                                    total: availableEquipment.total,
-                                    onChange: (page) =>
-                                        router.get('/movings', { ...filters, page }, { preserveState: true }),
-                                }}
-                            />
-                        </Card>
+                <Row justify="space-between" align="middle" gutter={[16, 16]}>
+                    <Col>
+                        <Typography.Title level={4} style={{ margin: 0 }}>
+                            Movings / IPA
+                        </Typography.Title>
                     </Col>
-
-                    <Col xs={24} lg={10}>
-                        <Card title={`Transfer Cart (${cartItems.length})`}>
-                            <ProTable
-                                rowKey="id"
-                                columns={cartColumns}
-                                dataSource={cartItems}
-                                search={false}
-                                options={false}
-                                pagination={false}
-                            />
-
-                            {cartItems.length > 0 && (
-                                <Form form={submitForm} layout="vertical" onFinish={submitTransfer} style={{ marginTop: 16 }}>
-                                    <Form.Item name="to_project_code" label="To Project" rules={[{ required: true }]}>
-                                        <Select
-                                            showSearch
-                                            optionFilterProp="label"
-                                            options={projects.map((p) => ({
-                                                value: p.code,
-                                                label: `${p.code} — ${p.name}`,
-                                            }))}
-                                        />
-                                    </Form.Item>
-                                    <Form.Item name="to_department_id" label="To Department">
-                                        <Select
-                                            allowClear
-                                            options={departments.map((d) => ({
-                                                value: d.id,
-                                                label: d.department_name,
-                                            }))}
-                                        />
-                                    </Form.Item>
-                                    <Form.Item name="notes" label="Notes">
-                                        <Input.TextArea rows={2} />
-                                    </Form.Item>
-                                    <Button type="primary" htmlType="submit" icon={<SendOutlined />} block>
-                                        Submit Transfer
-                                    </Button>
-                                </Form>
-                            )}
-                        </Card>
+                    <Col>
+                        <Link href="/movings/create">
+                            <Button type="primary" icon={<PlusOutlined />}>
+                                Create New IPA
+                            </Button>
+                        </Link>
                     </Col>
                 </Row>
 
-                <Card title="Recent Transfers">
+                <Card>
+                    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                        <Input.Search
+                            placeholder="Quick search IPA no, project, unit, notes..."
+                            defaultValue={filters?.search}
+                            onSearch={(value) =>
+                                router.get(
+                                    '/movings',
+                                    { ...filters, search: value || undefined, page: undefined },
+                                    { preserveState: true },
+                                )
+                            }
+                            allowClear
+                        />
+
+                        <Collapse
+                            items={[
+                                {
+                                    key: 'advanced',
+                                    label: 'Advanced Filters',
+                                    children: (
+                                        <Form form={filterForm} layout="vertical" onFinish={() => applyFilters({ page: undefined })}>
+                                            <Row gutter={16}>
+                                                <Col xs={24} md={8}>
+                                                    <Form.Item name="ipa_no" label="IPA No">
+                                                        <Input allowClear />
+                                                    </Form.Item>
+                                                </Col>
+                                                <Col xs={24} md={8}>
+                                                    <Form.Item name="date_range" label="IPA Date Range">
+                                                        <DatePicker.RangePicker style={{ width: '100%' }} />
+                                                    </Form.Item>
+                                                </Col>
+                                                <Col xs={24} md={8}>
+                                                    <Form.Item name="unit_code" label="Unit Code">
+                                                        <Input allowClear />
+                                                    </Form.Item>
+                                                </Col>
+                                                <Col xs={24} md={8}>
+                                                    <Form.Item name="from_project_code" label="From Project">
+                                                        <Select
+                                                            allowClear
+                                                            showSearch
+                                                            optionFilterProp="label"
+                                                            options={projects.map((project) => ({
+                                                                value: project.code,
+                                                                label: `${project.code} — ${project.name}`,
+                                                            }))}
+                                                        />
+                                                    </Form.Item>
+                                                </Col>
+                                                <Col xs={24} md={8}>
+                                                    <Form.Item name="to_project_code" label="To Project">
+                                                        <Select
+                                                            allowClear
+                                                            showSearch
+                                                            optionFilterProp="label"
+                                                            options={projects.map((project) => ({
+                                                                value: project.code,
+                                                                label: `${project.code} — ${project.name}`,
+                                                            }))}
+                                                        />
+                                                    </Form.Item>
+                                                </Col>
+                                                <Col xs={24} md={8}>
+                                                    <Form.Item name="status" label="Status">
+                                                        <Select
+                                                            allowClear
+                                                            mode="multiple"
+                                                            options={[
+                                                                { value: 'DRAFT', label: 'DRAFT' },
+                                                                { value: 'SUBMITTED', label: 'SUBMITTED' },
+                                                                { value: 'APPROVED', label: 'APPROVED' },
+                                                            ]}
+                                                        />
+                                                    </Form.Item>
+                                                </Col>
+                                            </Row>
+                                            <Space>
+                                                <Button type="primary" htmlType="submit">
+                                                    Apply Filters
+                                                </Button>
+                                                <Button onClick={resetFilters}>Reset</Button>
+                                            </Space>
+                                        </Form>
+                                    ),
+                                },
+                            ]}
+                        />
+                    </Space>
+                </Card>
+
+                <Card>
                     <ProTable
                         rowKey="id"
-                        columns={historyColumns}
+                        columns={columns}
                         dataSource={transfers.data}
                         search={false}
                         options={false}
@@ -156,8 +295,7 @@ export default function MovingsIndex() {
                             current: transfers.current_page,
                             pageSize: transfers.per_page,
                             total: transfers.total,
-                            onChange: (page) =>
-                                router.get('/movings', { transfers_page: page }, { preserveState: true }),
+                            onChange: (page) => applyFilters({ page }),
                         }}
                     />
                 </Card>

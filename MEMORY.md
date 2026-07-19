@@ -52,6 +52,13 @@
 - **Migration**: `legacy:migrate` dry-run default; `LegacyMigrationService` + `legacy` DB connection; mappings in `config/legacy_migration.php`.
 - **UAT gate**: `SapPostingGate` requires `SAP_POSTING_UAT_SIGNED_OFF` + module flags; checklist `docs/UAT-checklist.md`; tests in `FreshInstallTest`, `PostingIdempotencyTest`.
 
+### [009] Movings/IPA redesign (2026-07-19) ✅ COMPLETE
+- **Flow**: DRAFT header form → add-equipment cart (scoped by `ipa_transfer_id`) → submit → optional approve; index is filterable ProTable (no cart).
+- **Schema**: `ipa_transfers` gains `ipa_no`, `ipa_date`, tujuan/CC, status, approval; `cart_items.ipa_transfer_id`; `projects.bowheer`/`location` for PDF Dari/Tujuan.
+- **PDF**: `resources/views/pdf/ipa-transfer.blade.php` — legacy letterhead layout via DomPDF table HTML; Indonesian date uses `->locale('id')->translatedFormat()`.
+- **Routes**: `/movings/{id}/show`, `/movings/{id}/pdf`, `/movings/{id}/equipment` (old `/movings/transfers/*` removed).
+- **Run**: `php artisan migrate` after deploy; `projects.bowheer`/`location` UI still manual/DB until Projects master edit is built.
+
 ### [008] Phase 5 REST API + AI NLQ (2026-07-16) ✅ COMPLETE
 - **API**: Sanctum `/api/v1` for equipment, projects, fixed-assets, depreciation; `api:read` token ability; 60 req/min throttle; Settings → API Keys UI.
 - **NLQ**: `OpenRouterClient` + `NlqQueryService` with allowlisted schema catalog; `/reports/ai-nlq` renders guarded read-only results in ProTable.

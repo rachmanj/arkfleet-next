@@ -46,21 +46,28 @@ class OperationsTest extends TestCase
         $user = $this->userWithView();
         $equipment = Equipment::query()->where('unit_code', 'EX-001')->firstOrFail();
         $toProject = Project::query()->where('code', '001H')->firstOrFail();
+        $service = app(IpaTransferService::class);
 
-        CartItem::create([
-            'user_id' => $user->id,
+        $moving = $service->createIpa($user->id, [
+            'ipa_no' => 'IPA-TEST-001',
+            'ipa_date' => now()->toDateString(),
+            'from_project_code' => '000H',
+            'to_project_code' => $toProject->code,
+            'tujuan_row_1' => 'Site Manager',
+            'cc_row_1' => 'HO Jakarta',
+        ]);
+
+        $service->addEquipment($moving, $user->id, [
             'equipment_id' => $equipment->id,
             'to_project_code' => $toProject->code,
         ]);
 
-        $transfer = app(IpaTransferService::class)->submitTransfer($user->id, [
-            'from_project_code' => '000H',
-            'to_project_code' => $toProject->code,
-        ]);
+        $transfer = $service->submitIpa($moving);
 
         $this->assertStringStartsWith('IPA-', $transfer->transfer_number);
+        $this->assertSame('SUBMITTED', $transfer->status);
         $this->assertSame(1, $transfer->line_count);
-        $this->assertDatabaseMissing('cart_items', ['user_id' => $user->id]);
+        $this->assertDatabaseMissing('cart_items', ['ipa_transfer_id' => $moving->id]);
 
         $equipment->refresh();
         $this->assertSame($toProject->code, $equipment->project_code);

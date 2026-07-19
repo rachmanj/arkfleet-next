@@ -1,5 +1,5 @@
 Purpose: Technical reference for understanding system design and development patterns
-Last Updated: 2026-07-16
+Last Updated: 2026-07-19
 
 # System Architecture
 
@@ -27,8 +27,8 @@ ARKFleet v2 is a greenfield rebuild of the legacy fleet-management app, extended
 | SAP session client | `app/Services/Sap/SapService.php` | Singleton; `ensureSession()`, 401-retry-once |
 | SAP posting helper | `app/Services/Sap/PostingService.php` | Idempotency logging scaffold |
 | Dashboard | `app/Http/Controllers/DashboardController.php` | Stats + expiring document alerts |
-| IPA transfers | `app/Services/Operations/IpaTransferService.php` | Cart submit, equipment update, PDF generation |
-| Operations UI | `resources/js/Pages/Operations/*` | Movings cart, Documents CRUD |
+| IPA transfers | `app/Services/Operations/IpaTransferService.php` | DRAFT→SUBMITTED→APPROVED lifecycle, cart per IPA, equipment update, legacy-layout PDF |
+| Operations UI | `resources/js/Pages/Operations/*` | IPA list/filters, create/edit header, add-equipment cart, Documents CRUD |
 | Reports | `app/Http/Controllers/Reports/ReportController.php` | Expiring docs, IPA summary, active equipment + Excel/PDF |
 | Depreciation engine | `app/Services/Depreciation/*` | Dual-book SL/DB/SYD/UoP; `depreciation:run` command |
 | Fixed assets UI | `resources/js/Pages/Finance/*` | Capitalize, schedule, dispose, run depreciation |
@@ -52,8 +52,9 @@ ARKFleet v2 is a greenfield rebuild of the legacy fleet-management app, extended
 - Fleet lookups: `unit_models`, `manufactures`, `plant_types`, `plant_groups`, `asset_categories`, `unitstatuses`, `suppliers`
 - `equipment` — fleet register with financial fields
 - `document_types`, `equipment_documents` — compliance docs with expiry/extend
-- `cart_items` — per-user IPA transfer cart (unique user+equipment)
-- `ipa_transfers`, `ipa_transfer_lines` — transfer history + line detail
+- `cart_items` — per-IPA transfer cart (`ipa_transfer_id`, unique ipa_transfer+equipment)
+- `ipa_transfers` — IPA documents (`ipa_no`, `ipa_date`, tujuan/CC rows, `status`, approval fields) + `ipa_transfer_lines`
+- `projects` — includes optional `bowheer`, `location` for IPA print Dari/Tujuan block
 - `asset_classes`, `fixed_assets` (1:1 equipment), `depreciation_runs`, `depreciation_entries`, `asset_disposals`
 - `loans`, `loan_installments`, `loan_documents` — loan lifecycle + PDF source docs
 
@@ -73,8 +74,12 @@ ARKFleet v2 is a greenfield rebuild of the legacy fleet-management app, extended
 | POST | `/equipment/update-rfu`, `/equipment/update-bd` | Bulk RFU / B/D status update (Active units only; toggles `is_rfu`) |
 | GET | `/sap/sync` | Sync run history |
 | GET | `/sap/posting-logs` | Posting log history |
-| GET/POST/DELETE | `/movings`, `/movings/cart`, `/movings/submit` | IPA transfer cart + submit |
-| GET | `/movings/transfers/{id}`, `/movings/transfers/{id}/pdf` | Transfer detail + PDF |
+| GET | `/movings`, `/movings/create` | IPA list (filters) + create form |
+| POST/PUT/DELETE | `/movings`, `/movings/{id}` | Store/update/destroy DRAFT IPA header |
+| GET | `/movings/{id}/equipment` | Add-equipment page (cart scoped to IPA) |
+| POST/DELETE | `/movings/{id}/cart`, `/movings/{id}/cart/{cartItem}` | Cart add/remove |
+| POST | `/movings/{id}/submit`, `/movings/{id}/approve` | Submit IPA / approve |
+| GET | `/movings/{id}/show`, `/movings/{id}/pdf` | IPA detail + legacy-layout PDF |
 | GET/POST/PUT/DELETE | `/documents` | Equipment documents CRUD + extend |
 | GET | `/reports`, `/reports/*` | Operational reports + Excel/PDF export |
 | GET/POST/PUT | `/fixed-assets` | Fixed asset register + capitalize |

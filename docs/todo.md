@@ -1,5 +1,5 @@
 **Purpose**: Track current work and immediate priorities for ARKFleet v2 rebuild  
-**Last Updated**: 2026-07-16
+**Last Updated**: 2026-07-19
 
 # Current Tasks
 
@@ -22,6 +22,8 @@ Aligned with [ARKFleet-Rebuild-Plan.md](./ARKFleet-Rebuild-Plan.md) phased imple
 - `[blocked] P2: Consolidated vs per-asset depreciation journal [finance decision]`
 
 ## Recently Completed
+
+- `[done] Movings/IPA redesign — DRAFT→SUBMITTED→APPROVED lifecycle, filterable index, legacy PDF layout, cart scoped per IPA (completed: 2026-07-19)`
 
 - `[done] Equipment bulk RFU/B/D update — Update RFU Units / Update B/D Units modals on index; Active units only; Status column + filter (completed: 2026-07-16)`
 

@@ -9,6 +9,7 @@ class CartItem extends Model
 {
     protected $fillable = [
         'user_id',
+        'ipa_transfer_id',
         'equipment_id',
         'to_project_code',
         'to_department_id',
@@ -18,6 +19,11 @@ class CartItem extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function ipaTransfer(): BelongsTo
+    {
+        return $this->belongsTo(IpaTransfer::class);
     }
 
     public function equipment(): BelongsTo

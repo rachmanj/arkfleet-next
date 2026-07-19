@@ -125,7 +125,7 @@ class EquipmentController extends Controller
 
         $movingLines = IpaTransferLine::query()
             ->with([
-                'transfer:id,transfer_number,transferred_at',
+                'transfer:id,transfer_number,ipa_no,transferred_at',
                 'fromDepartment:id,department_name',
                 'toDepartment:id,department_name',
             ])

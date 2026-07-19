@@ -14,6 +14,8 @@ class Project extends Model
         'code',
         'sap_code',
         'name',
+        'bowheer',
+        'location',
         'description',
         'is_active',
         'is_selectable',

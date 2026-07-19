@@ -5,6 +5,14 @@
 
 ## Next Sprint (High Priority)
 
+### Projects master — bowheer & location fields
+
+- **Description**: Add editable `bowheer` and `location` to `/masters/projects` UI (columns exist after IPA redesign migration).
+- **User Value**: Full Dari/Tujuan block on printed IPA instead of falling back to project name only.
+- **Effort**: Small
+- **Dependencies**: `add_bowheer_location_to_projects_table` migration
+- **Files Affected**: Projects controller + `resources/js/Pages/Masters/Projects/*`
+
 ### [Feature Name]
 
 - **Description**: [What this feature does]
