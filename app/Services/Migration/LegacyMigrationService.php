@@ -7,6 +7,8 @@ use App\Models\Department;
 use App\Models\DocumentType;
 use App\Models\Equipment;
 use App\Models\EquipmentDocument;
+use App\Models\IpaTransfer;
+use App\Models\IpaTransferLine;
 use App\Models\Manufacture;
 use App\Models\PlantGroup;
 use App\Models\PlantType;
@@ -132,6 +134,7 @@ class LegacyMigrationService
             'user_roles' => $this->migrateUserRoles(),
             'equipment' => $this->migrateEquipment(),
             'equipment_documents' => $this->migrateEquipmentDocuments(),
+            'movings' => $this->migrateMovings(),
             default => throw new RuntimeException("Unknown migration entity [{$entity}]"),
         });
     }
@@ -552,6 +555,88 @@ class LegacyMigrationService
             });
 
         $stats['legacy_rows'] = $this->legacyQuery('documents')->whereNull('deleted_at')->count();
+
+        return $stats;
+    }
+
+    protected function migrateMovings(): array
+    {
+        $stats = $this->emptyStats();
+
+        $this->legacyQuery('movings')
+            ->orderBy('id')
+            ->chunk($this->chunkSize(), function (Collection $rows) use (&$stats) {
+                foreach ($rows as $row) {
+                    // Skip if this ipa_no already exists (idempotent)
+                    if (IpaTransfer::query()->where('ipa_no', $row->ipa_no)->exists()) {
+                        $stats['skipped']++;
+                        continue;
+                    }
+
+                    try {
+                        $fromProjectCode = $this->resolveProjectCode($row->from_project_id);
+                        $toProjectCode = $this->resolveProjectCode($row->to_project_id);
+                        $userId = $this->mapId('users', $row->created_by);
+
+                        // Count moving_details for this moving_id
+                        $lineCount = $this->legacyQuery('moving_details')
+                            ->where('moving_id', $row->id)
+                            ->count();
+
+                        // Generate transfer_number from ipa_no
+                        $transferNumber = 'TRF-'.$row->ipa_no;
+
+                        $ipaTransfer = IpaTransfer::query()->create([
+                            'transfer_number' => $transferNumber,
+                            'ipa_no' => $row->ipa_no,
+                            'ipa_date' => $row->ipa_date,
+                            'user_id' => $userId,
+                            'from_project_code' => $fromProjectCode,
+                            'to_project_code' => $toProjectCode,
+                            'tujuan_row_1' => $row->tujuan_row_1,
+                            'tujuan_row_2' => $row->tujuan_row_2,
+                            'cc_row_1' => $row->cc_row_1,
+                            'cc_row_2' => $row->cc_row_2,
+                            'cc_row_3' => $row->cc_row_3,
+                            'status' => 'SUBMITTED', // all legacy flag is NULL
+                            'notes' => $row->remarks,
+                            'transferred_at' => $row->created_at,
+                            'line_count' => $lineCount,
+                        ]);
+
+                        // Migrate moving_details for this moving_id
+                        $details = $this->legacyQuery('moving_details')
+                            ->where('moving_id', $row->id)
+                            ->get();
+
+                        foreach ($details as $detail) {
+                            $equipmentId = $this->mapId('equipment', $detail->equipment_id);
+
+                            if (! $equipmentId) {
+                                continue; // skip lines with unmapped equipment
+                            }
+
+                            // Get unit_code from v2 equipment
+                            $unitCode = Equipment::query()->where('id', $equipmentId)->value('unit_code');
+
+                            IpaTransferLine::query()->create([
+                                'ipa_transfer_id' => $ipaTransfer->id,
+                                'equipment_id' => $equipmentId,
+                                'unit_code' => $unitCode,
+                                'from_project_code' => $fromProjectCode,
+                                'to_project_code' => $toProjectCode,
+                            ]);
+                        }
+
+                        $stats['imported']++;
+                    } catch (\Throwable $e) {
+                        $stats['failed']++;
+                        $stats['errors'][] = "legacy movings id {$row->id}: {$e->getMessage()}";
+                    }
+                }
+            });
+
+        $stats['legacy_rows'] = $this->safeCount('movings') ?? 0;
 
         return $stats;
     }

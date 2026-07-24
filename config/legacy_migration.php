@@ -52,6 +52,7 @@ return [
         'user_roles',
         'equipment',
         'equipment_documents',
+        'movings',
     ],
 
     'entities' => [
@@ -137,6 +138,12 @@ return [
             'target' => \App\Models\EquipmentDocument::class,
             'upsert_by' => null,
             'notes' => '555 legacy documents; equipment_id and document_type_id remapped.',
+        ],
+        'movings' => [
+            'legacy_table' => 'movings',
+            'target' => \App\Models\IpaTransfer::class,
+            'upsert_by' => ['ipa_no'],
+            'notes' => '371 legacy movings rows with 797 moving_details; migrates to ipa_transfers + ipa_transfer_lines.',
         ],
     ],
 
