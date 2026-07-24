@@ -1,0 +1,52 @@
+services:
+  app:
+    build: .
+    container_name: arkfleet-app
+    restart: unless-stopped
+    ports:
+      - "3002:80"
+    environment:
+      - APP_NAME=ArkFleet
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_URL=https://arkfleet.adikaramulia.co.id
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=arkfleet_next
+      - DB_USERNAME=arkfleet
+      - DB_PASSWORD=${DB_PASSWORD:-arkfleet_secret_2026}
+    volumes:
+      - app_storage:/var/www/storage
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql:8.4
+    container_name: arkfleet-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-root_secret_2026}
+      - MYSQL_DATABASE=arkfleet_next
+      - MYSQL_USER=arkfleet
+      - MYSQL_PASSWORD=${DB_PASSWORD:-arkfleet_secret_2026}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+volumes:
+  app_storage:
+  mysql_data:
+
+networks:
+  app-network:
+    driver: bridge
