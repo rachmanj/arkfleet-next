@@ -21,7 +21,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['equipment_id', 'reading_type', 'reading_date']);
+            $table->index(['equipment_id', 'reading_type', 'reading_date'], 'hmkm_equip_type_date_idx');
             $table->index('upload_batch_id');
         });
     }
