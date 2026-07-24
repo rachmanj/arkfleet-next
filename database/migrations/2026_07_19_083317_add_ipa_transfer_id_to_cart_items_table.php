@@ -12,6 +12,8 @@ return new class extends Migration
             $table->foreignId('ipa_transfer_id')->nullable()->after('user_id')
                 ->constrained('ipa_transfers')->cascadeOnDelete();
 
+            // Create a separate index for user_id before dropping unique that FK depends on
+            $table->index('user_id');
             $table->dropUnique(['user_id', 'equipment_id']);
             $table->unique(['ipa_transfer_id', 'equipment_id']);
         });
