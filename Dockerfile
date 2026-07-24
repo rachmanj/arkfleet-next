@@ -17,6 +17,7 @@ RUN apk add --no-cache \
     libpng-dev \
     libjpeg-turbo-dev \
     freetype-dev \
+    libzip-dev \
     zip \
     unzip \
     git \
@@ -34,6 +35,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         xml \
         bcmath \
         gd \
+        zip \
         opcache \
         exif \
         pcntl
