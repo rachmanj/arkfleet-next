@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:api:read', 'throttle:api'])->group(function () {
     Route::get('equipment', [EquipmentController::class, 'index']);
     Route::get('equipment/{equipment}', [EquipmentController::class, 'show']);
+    Route::get('equipment/{equipment}/hm-km-readings', [EquipmentController::class, 'hmKmReadings']);
 
     Route::get('projects', [ProjectController::class, 'index']);
     Route::get('projects/{code}', [ProjectController::class, 'show']);
