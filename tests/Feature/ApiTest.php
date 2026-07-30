@@ -39,7 +39,10 @@ class ApiTest extends TestCase
 
         $this->getJson('/api/v1/equipment')
             ->assertOk()
-            ->assertJsonStructure(['data', 'current_page', 'per_page']);
+            ->assertJsonStructure([
+                'data',
+                'meta' => ['current_page', 'last_page', 'per_page', 'total'],
+            ]);
     }
 
     public function test_projects_index_returns_projects(): void
